@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: 编译 · 自检 · 打包
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 准备 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 编译 TypeScript
+        run: npm run compile
+
+      - name: 校验 viewer.html 替换锚点
+        run: npm run check
+
+      - name: 冒烟测试（离线断言；无 API Key 时自动跳过端到端）
+        run: npm run smoke
+
+      - name: 打包 VSIX
+        run: npm run package
+
+      - name: 上传 VSIX 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: '*.vsix'
+          if-no-files-found: error

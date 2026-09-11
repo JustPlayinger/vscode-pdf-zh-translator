@@ -1,0 +1,267 @@
+/*
+ * vscode-pdf-zh-translator —— Webview 追加样式
+ * 加载顺序在 pdf.js 的 viewer.css 之后，因此这里的规则用于覆盖与扩展。
+ */
+
+:root {
+  --pdfzh-panel-w: 380px;
+  --pdfzh-bg: #1e1e1e;
+  --pdfzh-bg-soft: #252526;
+  --pdfzh-border: #3c3c3c;
+  --pdfzh-fg: #d4d4d4;
+  --pdfzh-fg-dim: #9d9d9d;
+  --pdfzh-accent: #4daafc;
+  --pdfzh-hit: #2ea043;
+  --pdfzh-err: #f48771;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── 工具栏按钮 ─────────────────────────────────────────── */
+
+.pdfzh-toolbarButton {
+  display: inline-block;
+  min-width: 26px;
+  height: 24px;
+  line-height: 22px;
+  padding: 0 7px;
+  margin: 0 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, sans-serif;
+  text-align: center;
+  color: inherit;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  user-select: none;
+  opacity: 0.85;
+}
+
+.pdfzh-toolbarButton:hover {
+  background: rgba(128, 128, 128, 0.25);
+  opacity: 1;
+}
+
+.pdfzh-toolbarButton.active {
+  background: rgba(128, 128, 128, 0.35);
+  opacity: 1;
+}
+
+.pdfzh-toolbarButton[data-busy="1"] {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+/* 面板打开时给主容器让出右侧空间。
+   viewer.html 中 #toolbarContainer 位于 #mainContainer 内部，
+   因此只移动 #mainContainer 即可让工具栏与画布一起让位。 */
+body.pdfzh-open #mainContainer {
+  right: var(--pdfzh-panel-w);
+}
+
+/* ── 右侧中英对照面板 ───────────────────────────────────── */
+
+#pdfzh-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--pdfzh-panel-w);
+  display: none;
+  flex-direction: column;
+  background: var(--pdfzh-bg);
+  color: var(--pdfzh-fg);
+  border-left: 1px solid var(--pdfzh-border);
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
+  z-index: 100;
+}
+
+body.pdfzh-open #pdfzh-panel {
+  display: flex;
+}
+
+#pdfzh-panel header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--pdfzh-border);
+  background: var(--pdfzh-bg-soft);
+}
+
+#pdfzh-panel .pdfzh-title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#pdfzh-panel .pdfzh-spacer {
+  flex: 1 1 auto;
+}
+
+#pdfzh-panel button.pdfzh-btn {
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--pdfzh-fg);
+  background: transparent;
+  border: 1px solid var(--pdfzh-border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+#pdfzh-panel button.pdfzh-btn:hover:not([disabled]) {
+  border-color: var(--pdfzh-accent);
+  color: var(--pdfzh-accent);
+}
+
+#pdfzh-panel button.pdfzh-btn[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+
+#pdfzh-status {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--pdfzh-fg-dim);
+  border-bottom: 1px solid var(--pdfzh-border);
+  min-height: 16px;
+}
+
+.pdfzh-actions {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--pdfzh-border);
+}
+
+#pdfzh-status.error {
+  color: var(--pdfzh-err);
+}
+
+#pdfzh-status.ok {
+  color: var(--pdfzh-hit);
+}
+
+#pdfzh-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 10px 12px 40px;
+}
+
+.pdfzh-para {
+  margin: 0 0 14px;
+  padding: 0 0 0 8px;
+  border-left: 2px solid transparent;
+}
+
+.pdfzh-para:hover {
+  border-left-color: var(--pdfzh-border);
+}
+
+.pdfzh-para .pdfzh-zh {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.pdfzh-para .pdfzh-en {
+  display: none;
+  margin-top: 4px;
+  color: var(--pdfzh-fg-dim);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+body.pdfzh-show-en .pdfzh-para .pdfzh-en {
+  display: block;
+}
+
+.pdfzh-para .pdfzh-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  font-size: 10px;
+  line-height: 15px;
+  border-radius: 8px;
+  color: var(--pdfzh-hit);
+  border: 1px solid currentColor;
+  vertical-align: 2px;
+  opacity: 0.8;
+}
+
+.pdfzh-para.pdfzh-failed .pdfzh-zh {
+  color: var(--pdfzh-err);
+}
+
+.pdfzh-empty {
+  color: var(--pdfzh-fg-dim);
+  text-align: center;
+  padding: 30px 10px;
+}
+
+.pdfzh-hint {
+  color: var(--pdfzh-fg-dim);
+  font-size: 12px;
+  padding: 2px 0 12px;
+}
+
+/* ── 划词浮窗 ───────────────────────────────────────────── */
+
+#pdfzh-pop {
+  position: fixed;
+  max-width: 340px;
+  padding: 8px 10px;
+  background: var(--pdfzh-bg-soft);
+  color: var(--pdfzh-fg);
+  border: 1px solid var(--pdfzh-border);
+  border-radius: 5px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  z-index: 200;
+  display: none;
+}
+
+#pdfzh-pop .pdfzh-pop-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#pdfzh-pop .pdfzh-pop-actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+}
+
+#pdfzh-pop button {
+  padding: 2px 8px;
+  font-size: 12px;
+  color: var(--pdfzh-fg);
+  background: transparent;
+  border: 1px solid var(--pdfzh-border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+#pdfzh-pop button:hover {
+  border-color: var(--pdfzh-accent);
+  color: var(--pdfzh-accent);
+}
+

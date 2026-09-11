@@ -1,0 +1,40 @@
+# 依赖
+node_modules/
+
+# TypeScript 编译产物
+out/
+*.tsbuildinfo
+
+# 打包产物
+*.vsix
+dist/
+
+# VS Code 测试宿主
+.vscode-test/
+
+# 本地密钥与配置（严禁提交）
+.env
+.env.*
+secrets/
+*.secret.json
+.secrets/
+
+# 本地翻译缓存（若把 pdf-zh.cacheDir 指到了仓库内）
+translation-cache/
+.cache/
+
+# 日志与临时文件
+logs/
+*.log
+*.tmp
+*.bak
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# 系统
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/

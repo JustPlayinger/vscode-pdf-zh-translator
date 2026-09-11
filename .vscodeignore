@@ -1,0 +1,22 @@
+# 开发产物与源文件不进 VSIX
+.vscode/**
+.vscode-test/**
+.github/**
+src/**
+scripts/**
+node_modules/**
+out/**/*.map
+**/*.ts
+**/*.tsbuildinfo
+
+# 仓库元文件
+.gitignore
+.gitattributes
+.editorconfig
+.nvmrc
+tsconfig.json
+*.vsix
+
+# 仅供 README 展示
+media/screenshot.png
+media/demo.gif

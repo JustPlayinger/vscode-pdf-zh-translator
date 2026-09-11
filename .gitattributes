@@ -1,0 +1,18 @@
+# 文本文件统一 LF
+* text=auto eol=lf
+
+# pdf.js 静态资源中的二进制文件：禁止行尾转换，禁止 diff
+*.png   -text -diff
+*.gif   -text -diff
+*.ico   -text -diff
+*.cur   -text -diff
+*.pfb   -text -diff
+*.ttf   -text -diff
+*.woff  -text -diff
+*.woff2 -text -diff
+*.bcmap -text -diff
+
+# GitHub 语言统计：把第三方资源标记为 vendored，不计入本仓库语言占比
+lib/** linguist-vendored
+lib/web/cmaps/** linguist-generated
+lib/build/** linguist-generated
