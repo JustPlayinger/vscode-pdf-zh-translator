@@ -152,6 +152,9 @@ export class PdfPreview implements vscode.Disposable {
       fileName: path.basename(this.resource.fsPath),
       cMapUrl: `${this.asset('web', 'cmaps')}/`,
       standardFontDataUrl: `${this.asset('web', 'standard_fonts')}/`,
+      // 显式给出 worker 的绝对地址：即使 worker 脚本因任何原因没被加载，
+      // pdf.js 的「假 worker」也不会再按相对路径 ../build/pdf.worker.js 去解析。
+      workerSrc: this.asset('build', 'pdf.worker.js'),
       autoTranslatePageOnScroll: readAutoTranslateOnScroll(),
       provider: config.provider,
       model: config.model,
@@ -181,12 +184,17 @@ export class PdfPreview implements vscode.Disposable {
         'href="locale/locale.properties"',
         `href="${this.asset('web', 'locale', 'locale.properties')}"`,
       )
+      // ⚠️ 必须整段替换（连同 </script>）。
+      // 若只替换 src 属性，会拼出 <script src="A"><script src="B"></script>：
+      // 浏览器处于 script data 状态时会把第二个 <script> 当作**第一个脚本的文本内容**，
+      // 于是紧接着的 </script> 只闭合了第一个标签 —— worker 脚本从未被加载，
+      // pdf.js 随之退化为「假 worker」，并用相对路径解析地址而失败。
       .replace(
-        'src="../build/pdf.js"',
+        '<script src="../build/pdf.js"></script>',
         [
-          `src="${this.asset('build', 'pdf.js')}"`,
-          `><script src="${this.asset('build', 'pdf.worker.js')}"`,
-        ].join(''),
+          `<script src="${this.asset('build', 'pdf.js')}"></script>`,
+          `<script src="${this.asset('build', 'pdf.worker.js')}"></script>`,
+        ].join('\n'),
       )
       .replace('src="viewer.js"', `src="${this.asset('web', 'viewer.js')}"`)
       .replace(

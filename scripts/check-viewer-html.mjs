@@ -80,7 +80,10 @@ if (!fs.existsSync(viewerHtmlPath)) {
     for (const fragment of [
       'href="viewer.css"',
       'href="locale/locale.properties"',
-      'src="../build/pdf.js"',
+      // 必须整段替换（含闭合标签），这里同步校验 pdfPreview.ts 用的是完整锚点
+      'src="../build/pdf.js"></script>',
+      // worker 资源确实被引用；它是否被装配成**独立标签**由下方结构断言保证
+      "'build', 'pdf.worker.js'",
       'src="viewer.js"',
       "'</head>'",
     ]) {
@@ -107,8 +110,11 @@ if (fs.existsSync(viewerHtmlPath)) {
       `href="${u('lib/web/locale/locale.properties')}"`,
     )
     .replace(
-      'src="../build/pdf.js"',
-      [`src="${u('lib/build/pdf.js')}"`, `><script src="${u('lib/build/pdf.worker.js')}"`].join(''),
+      '<script src="../build/pdf.js"></script>',
+      [
+        `<script src="${u('lib/build/pdf.js')}"></script>`,
+        `<script src="${u('lib/build/pdf.worker.js')}"></script>`,
+      ].join('\n'),
     )
     .replace('src="viewer.js"', `src="${u('lib/web/viewer.js')}"`)
     .replace(
@@ -150,6 +156,55 @@ if (fs.existsSync(viewerHtmlPath)) {
     !/href="viewer\.css"|src="viewer\.js"|src="\.\.\/build\/pdf\.js"/.test(assembled),
   );
   check('head 闭合且唯一', assembled.split('</head>').length - 1 === 1);
+
+  // ── 结构合法性（这一组断言的存在原因见下方注释） ──────────────
+  // 曾经出过的事故：只替换了 src 属性而没替换 </script>，拼出
+  //   <script src="A"><script src="B"></script>
+  // 浏览器在 script data 状态下会把第二个 <script> 当成第一个脚本的**文本内容**，
+  // 于是 worker 脚本从未被加载，pdf.js 退化为「假 worker」并按相对路径
+  // ../build/pdf.worker.js 解析，最终 404（Setting up fake worker failed）。
+  // 只检查子串是否存在是发现不了这种问题的，必须检查标签结构。
+  const openCount = (assembled.match(/<script\b/gi) || []).length;
+  const closeCount = (assembled.match(/<\/script>/gi) || []).length;
+  check(
+    '<script 与 </script> 数量一致',
+    openCount === closeCount,
+    `open=${openCount} close=${closeCount}`,
+  );
+
+  const merged = (() => {
+    const openRe = /<script\b/gi;
+    let match;
+    while ((match = openRe.exec(assembled)) !== null) {
+      const closeIdx = assembled.indexOf('</script>', match.index);
+      if (closeIdx === -1) {
+        return { index: match.index, reason: '脚本标签缺少 </script>' };
+      }
+      const between = assembled.slice(match.index + 7, closeIdx);
+      if (/<script\b/i.test(between)) {
+        return {
+          index: match.index,
+          reason: '闭合前又出现 <script，会被当作脚本文本吞掉',
+        };
+      }
+      openRe.lastIndex = closeIdx + '</script>'.length;
+    }
+    return null;
+  })();
+  check(
+    'script 标签结构合法（没有被吞并的嵌套）',
+    merged === null,
+    merged ? `位置 ${merged.index}：${merged.reason}` : '',
+  );
+  check(
+    'pdf.worker.js 是**独立**的 script 标签',
+    new RegExp(`<script src="[^"]*pdf\\.worker\\.js"></script>`).test(assembled),
+  );
+  check(
+    'pdf.js 标签自身是闭合的',
+    new RegExp(`<script src="[^"]*build/pdf\\.js"></script>`).test(assembled),
+  );
+  check('装配后共 5 个脚本标签', openCount === 5, `open=${openCount}`);
 }
 
 console.log('\n[5] Webview 脚本语法检查');
