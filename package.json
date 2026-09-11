@@ -198,8 +198,9 @@
     "watch": "tsc -w -p ./",
     "check": "node scripts/check-viewer-html.mjs && node scripts/check-manifest.mjs",
     "smoke": "node scripts/smoke-test.mjs",
+    "smoke:webview": "node scripts/smoke-webview.mjs",
     "smoke:pdf": "node scripts/smoke-paragraphs.mjs",
-    "verify": "npm run compile && npm run check && npm run smoke",
+    "verify": "npm run compile && npm run check && npm run smoke && npm run smoke:webview",
     "package": "vsce package --no-dependencies",
     "sync-lib": "powershell -ExecutionPolicy Bypass -File scripts/sync-lib.ps1",
     "make-icon": "powershell -ExecutionPolicy Bypass -File scripts/make-icon.ps1"

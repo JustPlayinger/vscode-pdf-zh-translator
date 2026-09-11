@@ -35,6 +35,9 @@ jobs:
       - name: 冒烟测试（离线断言；无 API Key 时自动跳过端到端）
         run: npm run smoke
 
+      - name: Webview 启动契约测试
+        run: npm run smoke:webview
+
       - name: 打包 VSIX
         run: npm run package
 

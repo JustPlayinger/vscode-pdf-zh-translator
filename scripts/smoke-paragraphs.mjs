@@ -58,7 +58,12 @@ function loadGroupParagraphs() {
     readyState: 'complete',
     body: makeElement(),
     addEventListener: noop,
-    getElementById: () => null,
+    getElementById: (id) => {
+      if (id === 'pdfzh-status' || id === 'pdfzh-title' || id === 'pdfzh-body') {
+        return makeElement();
+      }
+      return null;
+    },
     createElement: makeElement,
     execCommand: () => false,
   };
