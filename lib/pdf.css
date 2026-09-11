@@ -220,6 +220,50 @@ body.pdfzh-show-en .pdfzh-para .pdfzh-en {
   padding: 2px 0 12px;
 }
 
+/* ── 覆盖模式：译文原位替换原文 ─────────────────────────── */
+
+/*
+ * 覆盖层的坐标与 pdf.js 文本层 span 完全同一坐标系：
+ * 文本层是 .page 的直接子元素且位于 (0,0)，所以把本层也挂在 .page 上，
+ * 用 span 的外接矩形就能像素级对齐。
+ * （不能放进 .textLayer —— 那里带 opacity:0.2，译文会变半透明。）
+ */
+
+.pdfzh-overlay-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* 点「原文」或关掉「覆盖」时隐藏覆盖层，露出英文原文 */
+body.pdfzh-show-en .pdfzh-overlay-layer,
+body.pdfzh-overlay-off .pdfzh-overlay-layer {
+  display: none;
+}
+
+.pdfzh-overlay {
+  position: absolute;
+  box-sizing: border-box;
+  overflow: hidden;
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.3;
+  font-weight: 400;
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+  padding: 0 1px;
+}
+
+.pdfzh-overlay::selection {
+  background: rgba(77, 170, 252, 0.45);
+}
+
 /* ── 划词浮窗 ───────────────────────────────────────────── */
 
 #pdfzh-pop {

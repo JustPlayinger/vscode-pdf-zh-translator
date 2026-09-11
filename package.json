@@ -184,6 +184,32 @@
           "default": false,
           "markdownDescription": "翻页时自动翻译新页面。默认关闭，避免无人值守时消耗额度。"
         },
+        "pdf-zh.overlay.enabled": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "把译文**直接覆盖在 PDF 原文位置上**（原位替换）。关闭后只在右侧面板显示中英对照。面板里的「覆盖」按钮可以随时临时切换。"
+        },
+        "pdf-zh.overlay.fontScale": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0.5,
+          "maximum": 2,
+          "markdownDescription": "覆盖译文的字号倍率（相对原文字号）。译文放不下时会自动继续缩小。"
+        },
+        "pdf-zh.overlay.padding": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0,
+          "maximum": 6,
+          "markdownDescription": "覆盖块相对原文外接矩形向外扩张的像素数，用于盖住字形边缘。相邻段落贴得太近时可调小到 0。"
+        },
+        "pdf-zh.overlay.minFontSize": {
+          "type": "number",
+          "default": 6,
+          "minimum": 2,
+          "maximum": 20,
+          "markdownDescription": "低于该字号（CSS 像素）的文本不做覆盖 —— 通常是图注、坐标轴刻度、页眉页脚，覆盖它们反而更难读。"
+        },
         "pdf-zh.cacheDir": {
           "type": "string",
           "default": "",

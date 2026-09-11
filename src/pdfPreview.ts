@@ -8,6 +8,7 @@ import { ProviderConfig, SegRequest, SegResult, Usage } from './ai/types';
 import {
   apiKeyOf,
   readAutoTranslateOnScroll,
+  readOverlayConfig,
   readProviderConfig,
   resolveCacheRoot,
 } from './config';
@@ -156,6 +157,7 @@ export class PdfPreview implements vscode.Disposable {
       // pdf.js 的「假 worker」也不会再按相对路径 ../build/pdf.worker.js 去解析。
       workerSrc: this.asset('build', 'pdf.worker.js'),
       autoTranslatePageOnScroll: readAutoTranslateOnScroll(),
+      overlay: readOverlayConfig(),
       provider: config.provider,
       model: config.model,
       targetLang: config.targetLang,

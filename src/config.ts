@@ -23,6 +23,24 @@ export function readAutoTranslateOnScroll(): boolean {
   return vscode.workspace.getConfiguration(SECTION).get<boolean>('autoTranslatePageOnScroll', false);
 }
 
+/** 覆盖模式（译文原位替换原文）的调参。 */
+export interface OverlayConfig {
+  enabled: boolean;
+  fontScale: number;
+  padding: number;
+  minFontSize: number;
+}
+
+export function readOverlayConfig(): OverlayConfig {
+  const c = vscode.workspace.getConfiguration(SECTION);
+  return {
+    enabled: c.get<boolean>('overlay.enabled', true),
+    fontScale: c.get<number>('overlay.fontScale', 1),
+    padding: c.get<number>('overlay.padding', 1),
+    minFontSize: c.get<number>('overlay.minFontSize', 6),
+  };
+}
+
 function readCacheDirOverride(): string {
   return (vscode.workspace.getConfiguration(SECTION).get<string>('cacheDir', '') ?? '').trim();
 }

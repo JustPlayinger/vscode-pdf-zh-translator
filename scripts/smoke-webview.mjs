@@ -187,10 +187,11 @@ async function main() {
       posted.some((m) => m && m.type === 'tr:ready'),
       JSON.stringify(posted),
     );
-    check(
-      '取到 groupParagraphs 纯函数',
-      typeof (sandbox.window.__pdfzhInternals || {}).groupParagraphs === 'function',
-    );
+    const internals = sandbox.window.__pdfzhInternals || {};
+    check('暴露 groupParagraphs', typeof internals.groupParagraphs === 'function');
+    check('暴露 glyphsFromPdfItems', typeof internals.glyphsFromPdfItems === 'function');
+    check('暴露 glyphsFromTextLayer（覆盖模式定位用）', typeof internals.glyphsFromTextLayer === 'function');
+    check('暴露 paragraphBox（覆盖模式定位用）', typeof internals.paragraphBox === 'function');
 
     const onMessage = hostListeners.get('message');
     check('已注册宿主消息监听', typeof onMessage === 'function');
@@ -236,6 +237,18 @@ async function main() {
     check(
       'bootstrap.js 在 IIFE 顶层（非 load 回调内）写入 window.__PDF_ZH__',
       /^ {2}window\.__PDF_ZH__\s*=/m.test(bootstrap),
+    );
+
+    // 覆盖模式的结构约束
+    check('面板提供「覆盖」开关', source.includes('data-act="overlay"'));
+    check(
+      '覆盖层容器挂在 pageView.div（与文本层同一坐标系）',
+      /pageView\.div\.appendChild\(layer\)/.test(source),
+    );
+    check(
+      '覆盖层没有挂进 .textLayer（那里带 opacity:0.2，译文会半透明）',
+      !/\.textLayer['"]\s*\)\s*\.appendChild\(/.test(source) &&
+        !/textLayer[A-Za-z]*\.appendChild\(\s*(layer|cell)\b/.test(source),
     );
     check(
       'bootstrap.js 在 load 回调之前就调用了 acquireVsCodeApi()',
