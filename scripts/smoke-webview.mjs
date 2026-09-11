@@ -48,10 +48,13 @@ const CONFIG = {
  * 造一个最小可用的 Webview 替身环境。
  * withBridge=false 用于模拟 bootstrap.js 失效的场景。
  */
-function createSandbox() {
+function createSandbox(options = {}) {
+  const acquireThrows = !!options.acquireThrows;
   const noop = () => {};
   const posted = [];
   const hostListeners = new Map();
+  const optionCalls = [];
+  const pdfCalls = { open: 0, load: 0, getDocument: 0 };
 
   const makeElement = () => ({
     style: {},
@@ -74,9 +77,10 @@ function createSandbox() {
       name === 'data-config' ? JSON.stringify(CONFIG) : null,
   };
 
+  const originalBody = makeElement();
   const fakeDocument = {
     readyState: 'complete',
-    body: makeElement(),
+    body: originalBody,
     addEventListener: noop,
     createElement: makeElement,
     execCommand: () => false,
@@ -107,13 +111,40 @@ function createSandbox() {
     navigator: { clipboard: { writeText: async () => {} } },
     console,
     setTimeout,
-    PDFViewerApplicationOptions: { set: noop },
-    acquireVsCodeApi: () => ({ postMessage: (message) => posted.push(message) }),
+    PDFViewerApplicationOptions: {
+      set: (key, value) => {
+        optionCalls.push([key, value]);
+      },
+    },
+    PDFViewerApplication: {
+      initializedPromise: Promise.resolve(),
+      eventBus: { on: noop, off: noop },
+      open: async () => {
+        pdfCalls.open += 1;
+      },
+      load: async () => {
+        pdfCalls.load += 1;
+      },
+      pdfDocument: null,
+      pdfViewer: { currentPageNumber: 1 },
+    },
+    pdfjsLib: {
+      getDocument: () => {
+        pdfCalls.getDocument += 1;
+        return { promise: Promise.resolve({ _pdfInfo: {} }) };
+      },
+    },
+    acquireVsCodeApi: () => {
+      if (acquireThrows) {
+        throw new Error('模拟：acquireVsCodeApi 此时不可用');
+      }
+      return { postMessage: (message) => posted.push(message) };
+    },
   };
   sandbox.globalThis = sandbox;
 
   vm.createContext(sandbox);
-  return { sandbox, posted, hostListeners };
+  return { sandbox, posted, hostListeners, optionCalls, pdfCalls, originalBody };
 }
 
 function load(sandbox, rel) {
@@ -122,7 +153,7 @@ function load(sandbox, rel) {
   vm.runInContext(source, sandbox, { filename: rel });
 }
 
-function main() {
+async function main() {
   console.log('\n[1] bootstrap.js 必须在脚本加载时同步建立通信桥');
   {
     const { sandbox } = createSandbox();
@@ -235,6 +266,76 @@ function main() {
     );
   }
 
+  console.log('\n[5] 通信桥获取失败时，绝不能阻断 PDF 加载（历史回归）');
+  {
+    const ctx = createSandbox({ acquireThrows: true });
+    load(ctx.sandbox, 'lib/bootstrap.js');
+
+    const state = ctx.sandbox.window.__PDF_ZH__;
+    check('桥为 null（未伪装成功）', state && state.vscode === null);
+    check('记录了桥失败原因', !!(state && state.bridgeError), state && state.bridgeError);
+
+    const onLoad = ctx.hostListeners.get('load');
+    check('已注册 load 监听', typeof onLoad === 'function');
+
+    let threw = null;
+    try {
+      await onLoad();
+    } catch (error) {
+      threw = error;
+    }
+    check('load 处理不抛异常', threw === null, threw && threw.message);
+
+    check(
+      '仍然配置了 cMapUrl（说明越过了配置检查继续启动）',
+      ctx.optionCalls.some(([key]) => key === 'cMapUrl'),
+      JSON.stringify(ctx.optionCalls.map(([k]) => k)),
+    );
+    check(
+      '仍然配置了 standardFontDataUrl',
+      ctx.optionCalls.some(([key]) => key === 'standardFontDataUrl'),
+    );
+    check(
+      '仍然调用了 PDFViewerApplication.open',
+      ctx.pdfCalls.open === 1,
+      `open=${ctx.pdfCalls.open}`,
+    );
+    check(
+      '仍然调用了 PDFViewerApplication.load',
+      ctx.pdfCalls.load === 1,
+      `load=${ctx.pdfCalls.load}`,
+    );
+    check(
+      'document.body 未被替换（旧实现会整页换掉、丢失真实报错）',
+      ctx.sandbox.document.body === ctx.originalBody,
+    );
+  }
+
+  console.log('\n[6] 桥正常时，启动路径同样要跑通');
+  {
+    const ctx = createSandbox();
+    load(ctx.sandbox, 'lib/bootstrap.js');
+    load(ctx.sandbox, 'lib/ai-translate.js');
+
+    const onLoad = ctx.hostListeners.get('load');
+    let threw = null;
+    try {
+      await onLoad();
+    } catch (error) {
+      threw = error;
+    }
+    check('load 处理不抛异常', threw === null, threw && threw.message);
+    check('pdf.js 文档已加载', ctx.pdfCalls.load === 1, `load=${ctx.pdfCalls.load}`);
+    check(
+      'document.body 未被替换',
+      ctx.sandbox.document.body === ctx.originalBody,
+    );
+    check(
+      '宿主收到过 tr:ready',
+      ctx.posted.some((m) => m && m.type === 'tr:ready'),
+    );
+  }
+
   console.log(
     failures === 0
       ? '\nWebview 启动契约测试通过 \u2713\n'
@@ -243,4 +344,4 @@ function main() {
   process.exitCode = failures === 0 ? 0 : 1;
 }
 
-main();
+await main();
